@@ -20,6 +20,6 @@ public class Teapot extends Tableware {
 
     @Override
     public String toString() {
-        return super.getData() + style + " | ";
+        return super.getData() + style + " | " + "Teapot |";
     }
 }

@@ -5,6 +5,8 @@ import org.otabek.entity.Role;
 import org.otabek.entity.User;
 import org.otabek.exceptions.DaoException;
 
+import java.util.List;
+
 public class UserService {
     private UserDAO userDAO;
 
@@ -38,7 +40,7 @@ public class UserService {
         return userDAO.deleteUser(id);
     }
 
-    public void listAllUsers() throws DaoException {
-        userDAO.findAllUsers().forEach(System.out::println);
+    public List<User> listAllUsers() throws DaoException {
+        return userDAO.findAllUsers();
     }
 }

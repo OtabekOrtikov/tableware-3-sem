@@ -8,6 +8,7 @@ import org.otabek.entity.Role;
 import org.otabek.exceptions.DaoException;
 import org.otabek.service.TablewareService;
 import org.otabek.service.UserService;
+import org.otabek.view.MainView;
 
 public class AppConfig {
     private String dbUrl;
@@ -33,11 +34,12 @@ public class AppConfig {
         userDAO = new JDBCUserDao(dbUrl, dbUsername, dbPassword);
         tablewareService = new TablewareService(tablewareDAO);
         userService = new UserService(userDAO);
-        mainController = new MainController(userService, tablewareService);
+        MainView view = new MainView();
+        mainController = new MainController(view, tablewareService, userService);
 
-//        if (userService.findUserByUsername("admin") == null) {
-//            userService.createUser("admin", "admin", Role.ADMIN);
-//        }
+        if (userService.findUserByUsername("admin") == null) {
+            userService.createUser("admin", "admin", Role.ADMIN);
+        }
     }
 
     public MainController getMainController() {

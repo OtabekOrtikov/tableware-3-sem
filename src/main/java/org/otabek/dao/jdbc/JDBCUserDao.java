@@ -63,7 +63,7 @@ public class JDBCUserDao implements UserDAO {
             ps.setString(1, username);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return new User(rs.getInt("id"), rs.getString("username"), rs.getString("password"), Role.valueOf(rs.getString("role")));
+                return new User(rs.getInt("id"), rs.getString("username"), rs.getString("password"), Role.valueOf(rs.getString("role").toUpperCase()));
             } else {
                 return null;
             }
@@ -96,7 +96,7 @@ public class JDBCUserDao implements UserDAO {
         try (Connection conn = DriverManager.getConnection(url, user, password); Statement st = conn.createStatement(); ResultSet rs = st.executeQuery(sql)) {
             List<User> list = new ArrayList<>();
             while (rs.next()) {
-                list.add(new User(rs.getInt("id"), rs.getString("username"), rs.getString("password"), Role.valueOf(rs.getString("role"))));
+                list.add(new User(rs.getInt("id"), rs.getString("username"), rs.getString("password"), Role.valueOf(rs.getString("role").toUpperCase())));
             }
             return list;
         } catch (SQLException e) {

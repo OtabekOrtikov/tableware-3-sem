@@ -20,6 +20,6 @@ public class Cup extends Tableware {
 
     @Override
     public String toString() {
-        return getData() + category + " | ";
+        return getData() + category + " | " + "Cup |";
     }
 }

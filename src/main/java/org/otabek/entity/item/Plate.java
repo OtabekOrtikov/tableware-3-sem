@@ -20,6 +20,6 @@ public class Plate extends Tableware {
 
     @Override
     protected String getData() {
-        return super.getData() + radius + " | ";
+        return super.getData() + radius + " | " + "Plate |";
     }
 }
