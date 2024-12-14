@@ -1,9 +1,9 @@
 package org.otabek;
 
 import org.otabek.controller.MainController;
-import org.otabek.dao.UserDAO;
+import org.otabek.dao.IUserDAO;
 import org.otabek.dao.jdbc.JDBCTablewareDAO;
-import org.otabek.dao.jdbc.JDBCUserDao;
+import org.otabek.dao.jdbc.JDBCUserDAO;
 import org.otabek.entity.Role;
 import org.otabek.exceptions.DaoException;
 import org.otabek.service.TablewareService;
@@ -16,7 +16,7 @@ public class AppConfig {
     private String dbPassword;
 
     private JDBCTablewareDAO tablewareDAO;
-    private UserDAO userDAO;
+    private IUserDAO IUserDAO;
     private TablewareService tablewareService;
     private UserService userService;
     private MainController mainController;
@@ -31,9 +31,9 @@ public class AppConfig {
 
     private void init() throws DaoException {
         tablewareDAO = new JDBCTablewareDAO(dbUrl, dbUsername, dbPassword);
-        userDAO = new JDBCUserDao(dbUrl, dbUsername, dbPassword);
+        IUserDAO = new JDBCUserDAO(dbUrl, dbUsername, dbPassword);
         tablewareService = new TablewareService(tablewareDAO);
-        userService = new UserService(userDAO);
+        userService = new UserService(IUserDAO);
         MainView view = new MainView();
         mainController = new MainController(view, tablewareService, userService);
 

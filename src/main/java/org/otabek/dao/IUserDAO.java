@@ -5,7 +5,7 @@ import org.otabek.exceptions.DaoException;
 
 import java.util.List;
 
-public interface UserDAO {
+public interface IUserDAO {
     User createUser(User user) throws DaoException;
     User findUserById(int id) throws DaoException;
     User findUserByUsername(String username) throws DaoException;

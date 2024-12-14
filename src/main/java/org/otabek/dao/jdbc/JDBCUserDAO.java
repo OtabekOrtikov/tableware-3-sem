@@ -1,6 +1,6 @@
 package org.otabek.dao.jdbc;
 
-import org.otabek.dao.UserDAO;
+import org.otabek.dao.IUserDAO;
 import org.otabek.entity.Role;
 import org.otabek.entity.User;
 import org.otabek.exceptions.DaoException;
@@ -9,12 +9,12 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class JDBCUserDao implements UserDAO {
+public class JDBCUserDAO implements IUserDAO {
     private String url;
     private String user;
     private String password;
 
-    public JDBCUserDao(String url, String user, String password) {
+    public JDBCUserDAO(String url, String user, String password) {
         this.url = url;
         this.user = user;
         this.password = password;

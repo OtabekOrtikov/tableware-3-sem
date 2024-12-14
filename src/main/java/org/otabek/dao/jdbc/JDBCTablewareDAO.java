@@ -12,9 +12,9 @@ import java.util.List;
 import java.sql.*;
 
 public class JDBCTablewareDAO implements ITablewareDAO {
-    private String url;
-    private String user;
-    private String password;
+    private final String url;
+    private final String user;
+    private final String password;
 
     public JDBCTablewareDAO(String url, String user, String password) {
         this.url = url;

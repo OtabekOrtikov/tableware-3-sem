@@ -1,6 +1,6 @@
 package org.otabek.service;
 
-import org.otabek.dao.UserDAO;
+import org.otabek.dao.IUserDAO;
 import org.otabek.entity.Role;
 import org.otabek.entity.User;
 import org.otabek.exceptions.DaoException;
@@ -8,24 +8,24 @@ import org.otabek.exceptions.DaoException;
 import java.util.List;
 
 public class UserService {
-    private UserDAO userDAO;
+    private IUserDAO IUserDAO;
 
-    public UserService(UserDAO userDAO) {
-        this.userDAO = userDAO;
+    public UserService(IUserDAO IUserDAO) {
+        this.IUserDAO = IUserDAO;
     }
 
     public User createUser(String username, String password, Role role) throws DaoException {
-        User existing = userDAO.findUserByUsername(username);
+        User existing = IUserDAO.findUserByUsername(username);
         if (existing != null) {
             System.out.println("User already exists!");
             return null;
         }
         User user = new User(0, username, password, role);
-        return userDAO.createUser(user);
+        return IUserDAO.createUser(user);
     }
 
     public User authenticate(String username, String password) throws DaoException {
-        User user = userDAO.findUserByUsername(username);
+        User user = IUserDAO.findUserByUsername(username);
         if (user != null && user.getPassword().equals(password)) {
             return user;
         }
@@ -33,14 +33,14 @@ public class UserService {
     }
 
     public User findUserByUsername(String username) throws DaoException {
-        return userDAO.findUserByUsername(username);
+        return IUserDAO.findUserByUsername(username);
     }
 
     public boolean deleteUser(int id) throws DaoException {
-        return userDAO.deleteUser(id);
+        return IUserDAO.deleteUser(id);
     }
 
     public List<User> listAllUsers() throws DaoException {
-        return userDAO.findAllUsers();
+        return IUserDAO.findAllUsers();
     }
 }
