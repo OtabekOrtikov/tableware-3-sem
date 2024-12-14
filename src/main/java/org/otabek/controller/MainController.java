@@ -121,8 +121,9 @@ public class MainController {
                     tablewareService.getAll().forEach(i -> mainView.displayMessage(i.toString()));
                 }
                 case "/create", "2" -> createItem();
-                case "/delete", "3" -> deleteItem();
-                case "/exit", "4" -> {
+                case "/update", "3" -> updateItem();
+                case "/delete", "4" -> deleteItem();
+                case "/exit", "5" -> {
                     return;
                 }
                 default -> mainView.displayInvalidCommandMessage();
@@ -158,6 +159,22 @@ public class MainController {
                 mainView.displayMessage("Teapot created successfully.");
             }
             default -> mainView.displayMessage("Invalid item type. Please try again.");
+        }
+    }
+
+    private void updateItem() throws DaoException {
+        mainView.displayMessage("If you want to back, enter 0.");
+        int id = Integer.parseInt(mainView.prompt("Enter item's id:"));
+        if (id == 0) {
+            return;
+        }
+        if (tablewareService.getByID(id) == null) {
+            mainView.displayMessage("Item not found.");
+        } else {
+            String column = mainView.prompt("Enter column name to update:");
+            String value = mainView.prompt("Enter new value:");
+            tablewareService.updateTableware(column, value, id);
+            mainView.displayMessage("Item updated successfully.");
         }
     }
 
