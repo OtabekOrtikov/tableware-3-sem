@@ -1,5 +1,6 @@
-package org.otabek.dao;
+package org.otabek.dao.jdbc;
 
+import org.otabek.dao.ITablewareDAO;
 import org.otabek.entity.Tableware;
 import org.otabek.entity.item.Cup;
 import org.otabek.entity.item.Plate;
