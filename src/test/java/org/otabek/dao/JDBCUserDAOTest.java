@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class JDBCUserDAOTest {
 
     private JDBCUserDAO userDao;
-    private static final String TEST_DB_URL = "jdbc:postgresql://localhost:5432/tableware_warehouse"; // In-memory database
+    private static final String TEST_DB_URL = "jdbc:postgresql://localhost:5432/tableware_warehousetest"; // In-memory database
     private static final String TEST_DB_USER = "postgres";
     private static final String TEST_DB_PASSWORD = "1234";
 

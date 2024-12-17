@@ -19,8 +19,8 @@ public class JDBCTablewareDAO2Test {
 
     @BeforeAll
     static void setUpDatabase() throws Exception {
-        connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/tableware_warehouse", "postgres", "1234");
-        dao = new JDBCTablewareDAO("jdbc:postgresql://localhost:5432/tableware_warehouse", "postgres", "1234");
+        connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/tableware_warehousetest", "postgres", "1234");
+        dao = new JDBCTablewareDAO("jdbc:postgresql://localhost:5432/tableware_warehousetest", "postgres", "1234");
 
         try (Statement stmt = connection.createStatement()) {
             stmt.execute("CREATE TABLE IF NOT EXISTS tableware (" +

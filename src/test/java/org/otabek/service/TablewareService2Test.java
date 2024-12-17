@@ -22,10 +22,10 @@ public class TablewareService2Test {
     @BeforeAll
     static void setUpDatabase() throws Exception {
         // Connect to the PostgreSQL or H2 database
-        connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/tableware_warehouse", "postgres", "1234");
+        connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/tableware_warehousetest", "postgres", "1234");
 
         // Initialize DAO and Service
-        dao = new JDBCTablewareDAO("jdbc:postgresql://localhost:5432/tableware_warehouse", "postgres", "1234");
+        dao = new JDBCTablewareDAO("jdbc:postgresql://localhost:5432/tableware_warehousetest", "postgres", "1234");
         service = new TablewareService(dao);
 
         // Set up the table
