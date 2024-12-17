@@ -24,7 +24,7 @@ public class AppConfig {
     public AppConfig() throws DaoException {
         dbUrl = "jdbc:postgresql://localhost:5432/tableware_warehouse";
         dbUsername = "postgres";
-        dbPassword = "1234";
+        dbPassword = "01042006Otabek!";
 
         init();
     }
