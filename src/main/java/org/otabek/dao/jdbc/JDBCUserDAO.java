@@ -115,4 +115,33 @@ public class JDBCUserDAO implements IUserDAO {
             throw new DaoException("Error deleting user", e);
         }
     }
+
+    public void changeAdmin(int newAdminId) throws DaoException {
+        String findAdmin = "SELECT id FROM users WHERE role = 'ADMIN'";
+        try (Connection conn = DriverManager.getConnection(url, user, password);
+             PreparedStatement findAdminStmt = conn.prepareStatement(findAdmin)) {
+
+            ResultSet rs = findAdminStmt.executeQuery();
+            if (rs.next()) {
+                int currentAdminId = rs.getInt("id");
+
+                if (currentAdminId != newAdminId) {
+                    User currentAdmin = findUserById(currentAdminId);
+                    currentAdmin.setRole(Role.USER);
+                    updateUser(currentAdmin);
+                }
+            }
+
+            User newAdmin = findUserById(newAdminId);
+            if (newAdmin != null) {
+                newAdmin.setRole(Role.ADMIN);
+                updateUser(newAdmin);
+            } else {
+                throw new DaoException("New admin with ID " + newAdminId + " not found");
+            }
+
+        } catch (SQLException e) {
+            throw new DaoException("Error changing admin", e);
+        }
+    }
 }

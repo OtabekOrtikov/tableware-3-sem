@@ -63,15 +63,15 @@ public class MainView {
     }
 
     public void displayManageUsersMenu() {
-        displayMessage("""
-                Manage Users:
-                
-                1. List all users - /list;
-                2. Create user - /create;
-                3. Delete user - /delete;
-                4. Back - /back;
-            
-                Please enter command name or number:""");
+        System.out.println("""
+                \nManage Users:
+                1. List users
+                2. Create user
+                3. Delete user
+                4. Change admin
+                5. Back
+                """);
+        System.out.print("Enter command: ");
     }
 
     public void displayManageItemsMenu() {
@@ -190,5 +190,10 @@ public class MainView {
     public int requestItemIdForDeletion() {
         displayMessage("Enter item ID to delete:");
         return Integer.parseInt(readLine());
+    }
+
+    public int requestUserIdForRoleChange() {
+        System.out.print("Enter the ID of the user to become the new admin: ");
+        return Integer.parseInt(sc.nextLine());
     }
 }

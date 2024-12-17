@@ -43,4 +43,23 @@ public class UserService {
     public List<User> listAllUsers() throws DaoException {
         return IUserDAO.findAllUsers();
     }
+
+    public void changeAdmin(int newAdminId) throws DaoException {
+        List<User> users = IUserDAO.findAllUsers();
+        for (User user : users) {
+            if (user.getRole() == Role.ADMIN) {
+                user.setRole(Role.USER);
+                IUserDAO.updateUser(user);
+                break;
+            }
+        }
+
+        User newAdmin = IUserDAO.findUserById(newAdminId);
+        if (newAdmin != null) {
+            newAdmin.setRole(Role.ADMIN);
+            IUserDAO.updateUser(newAdmin);
+        } else {
+            throw new DaoException("User with ID " + newAdminId + " not found");
+        }
+    }
 }

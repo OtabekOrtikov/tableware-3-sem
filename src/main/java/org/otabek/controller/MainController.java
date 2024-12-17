@@ -73,7 +73,8 @@ public class MainController {
                 case "/list", "1" -> listUsers();
                 case "/create", "2" -> createUser();
                 case "/delete", "3" -> deleteUser();
-                case "/exit", "4" -> {
+                case "/changeAdmin", "4" -> changeAdmin();
+                case "/exit", "5" -> {
                     return;
                 }
                 default -> mainView.displayInvalidCommandMessage();
@@ -152,6 +153,16 @@ public class MainController {
             mainView.displaySuccessMessage("Item deleted successfully.");
         } else {
             mainView.displayErrorMessage("Item not found.");
+        }
+    }
+
+    private void changeAdmin() throws DaoException {
+        int newAdminId = mainView.requestUserIdForRoleChange();
+        try {
+            userService.changeAdmin(newAdminId);
+            mainView.displaySuccessMessage("Admin role successfully transferred to user ID: " + newAdminId);
+        } catch (DaoException e) {
+            mainView.displayErrorMessage("Error changing admin: " + e.getMessage());
         }
     }
 }
