@@ -1,23 +1,23 @@
 package org.otabek.entity;
 
 public class User {
-    private int id;
+    private Integer id;
     private String username;
     private String password;
     private Role role;
 
-    public User(int id, String username, String password, Role role) {
+    public User(Integer id, String username, String password, Role role) {
         this.id = id;
         this.username = username;
         this.password = password;
         this.role = role;
     }
 
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 

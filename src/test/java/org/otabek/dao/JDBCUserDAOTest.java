@@ -5,9 +5,9 @@ import org.otabek.dao.jdbc.JDBCUserDAO;
 import org.otabek.entity.Role;
 import org.otabek.entity.User;
 import org.otabek.exceptions.DaoException;
+import org.otabek.pool.ConnectionPool;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.Statement;
 import java.util.List;
 
@@ -17,13 +17,18 @@ import static org.junit.jupiter.api.Assertions.*;
 class JDBCUserDAOTest {
 
     private JDBCUserDAO userDao;
-    private static final String TEST_DB_URL = "jdbc:postgresql://localhost:5432/tableware_warehousetest";
-    private static final String TEST_DB_USER = "postgres";
-    private static final String TEST_DB_PASSWORD = "1234";
+    private ConnectionPool connectionPool;
 
     @BeforeAll
     void setupDatabase() throws Exception {
-        try (Connection conn = DriverManager.getConnection(TEST_DB_URL, TEST_DB_USER, TEST_DB_PASSWORD);
+        connectionPool = ConnectionPool.create(
+                "jdbc:postgresql://localhost:5432/tableware_warehousetest",
+                "postgres",
+                "1234",
+                10 // Pool size
+        );
+
+        try (Connection conn = connectionPool.takeConnection();
              Statement st = conn.createStatement()) {
             st.execute("CREATE TABLE IF NOT EXISTS users (" +
                     "id SERIAL PRIMARY KEY, " +
@@ -32,31 +37,31 @@ class JDBCUserDAOTest {
                     "role VARCHAR(50) NOT NULL)");
         }
 
-        userDao = new JDBCUserDAO(TEST_DB_URL, TEST_DB_USER, TEST_DB_PASSWORD);
+        userDao = new JDBCUserDAO(connectionPool);
     }
 
     @BeforeEach
     void cleanup() throws Exception {
-        try (Connection conn = DriverManager.getConnection(TEST_DB_URL, TEST_DB_USER, TEST_DB_PASSWORD);
+        try (Connection conn = connectionPool.takeConnection();
              Statement st = conn.createStatement()) {
-            st.execute("TRUNCATE TABLE users");
+            st.execute("TRUNCATE TABLE users RESTART IDENTITY");
         }
     }
 
     @Test
     void testCreateUser() throws DaoException {
-        User user = new User(0, "testuser", "password123", Role.USER);
+        User user = new User(null, "testuser", "password123", Role.USER);
         User createdUser = userDao.createUser(user);
 
         assertNotNull(createdUser);
-        assertTrue(createdUser.getId() > 0);
+        assertNotNull(createdUser.getId(), "Created user ID should not be null");
         assertEquals("testuser", createdUser.getUsername());
     }
 
     @Test
     void testCreateDuplicateUser() {
-        User user1 = new User(0, "duplicateuser", "password123", Role.USER);
-        User user2 = new User(0, "duplicateuser", "password456", Role.ADMIN);
+        User user1 = new User(null, "duplicateuser", "password123", Role.USER);
+        User user2 = new User(null, "duplicateuser", "password456", Role.ADMIN);
 
         assertDoesNotThrow(() -> userDao.createUser(user1));
 
@@ -66,7 +71,7 @@ class JDBCUserDAOTest {
 
     @Test
     void testFindUserById() throws DaoException {
-        User user = new User(0, "testuser", "password123", Role.USER);
+        User user = new User(null, "testuser", "password123", Role.USER);
         User createdUser = userDao.createUser(user);
 
         User foundUser = userDao.findUserById(createdUser.getId());
@@ -84,7 +89,7 @@ class JDBCUserDAOTest {
 
     @Test
     void testFindUserByUsername() throws DaoException {
-        User user = new User(0, "uniqueuser", "password123", Role.USER);
+        User user = new User(null, "uniqueuser", "password123", Role.USER);
         userDao.createUser(user);
 
         User foundUser = userDao.findUserByUsername("uniqueuser");
@@ -101,7 +106,7 @@ class JDBCUserDAOTest {
 
     @Test
     void testUpdateUser() throws DaoException {
-        User user = new User(0, "olduser", "password123", Role.USER);
+        User user = new User(null, "olduser", "password123", Role.USER);
         User createdUser = userDao.createUser(user);
 
         createdUser.setUsername("newuser");
@@ -125,8 +130,8 @@ class JDBCUserDAOTest {
 
     @Test
     void testFindAllUsers() throws DaoException {
-        userDao.createUser(new User(0, "user1", "pass1", Role.USER));
-        userDao.createUser(new User(0, "user2", "pass2", Role.ADMIN));
+        userDao.createUser(new User(null, "user1", "pass1", Role.USER));
+        userDao.createUser(new User(null, "user2", "pass2", Role.ADMIN));
 
         List<User> users = userDao.findAllUsers();
 
@@ -144,7 +149,7 @@ class JDBCUserDAOTest {
 
     @Test
     void testDeleteUser() throws DaoException {
-        User user = new User(0, "todelete", "password123", Role.USER);
+        User user = new User(null, "todelete", "password123", Role.USER);
         User createdUser = userDao.createUser(user);
 
         boolean deleted = userDao.deleteUser(createdUser.getId());
@@ -160,5 +165,14 @@ class JDBCUserDAOTest {
         boolean deleted = userDao.deleteUser(999);
 
         assertFalse(deleted);
+    }
+
+    @AfterAll
+    void tearDown() throws Exception {
+        try (Connection conn = connectionPool.takeConnection();
+             Statement st = conn.createStatement()) {
+            st.execute("DROP TABLE IF EXISTS users");
+        }
+        connectionPool.close();
     }
 }

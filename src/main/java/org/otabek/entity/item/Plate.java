@@ -5,7 +5,7 @@ import org.otabek.entity.Tableware;
 public class Plate extends Tableware {
     private float radius;
 
-    public Plate(int id, String name, float width, String color, float price, float radius) {
+    public Plate(Integer id, String name, float width, String color, float price, float radius) {
         super(id, name, width, color, price);
         this.radius = radius;
     }

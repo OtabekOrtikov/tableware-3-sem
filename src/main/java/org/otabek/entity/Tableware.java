@@ -3,13 +3,13 @@ package org.otabek.entity;
 import java.util.Objects;
 
 public abstract class Tableware {
-    private int id;
+    private Integer id;
     private String name;
     private float width;
     private String color;
     private float price;
 
-    public Tableware(int id, String name, float width, String color, float price) {
+    public Tableware(Integer id, String name, float width, String color, float price) {
         this.id = id;
         this.name = name;
         this.width = width;
@@ -17,11 +17,11 @@ public abstract class Tableware {
         this.price = price;
     }
 
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 

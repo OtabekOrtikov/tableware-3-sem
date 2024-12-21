@@ -1,0 +1,17 @@
+CREATE TABLE IF NOT EXISTS tableware (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    width REAL NOT NULL,
+    color VARCHAR(255),
+    price REAL NOT NULL,
+    type VARCHAR(50) NOT NULL,   -- "CUP", "PLATE", or "TEAPOT"
+    category VARCHAR(255),       -- For CUP
+    radius REAL,                 -- For PLATE
+    style VARCHAR(255)           -- For TEAPOT
+);
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL
+);

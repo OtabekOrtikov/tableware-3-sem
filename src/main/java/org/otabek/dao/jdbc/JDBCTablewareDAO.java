@@ -5,28 +5,26 @@ import org.otabek.entity.Tableware;
 import org.otabek.entity.item.Cup;
 import org.otabek.entity.item.Plate;
 import org.otabek.entity.item.Teapot;
+import org.otabek.exceptions.ConnectionPoolException;
 import org.otabek.exceptions.DaoException;
+import org.otabek.pool.ConnectionPool;
 
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.sql.*;
 
 public class JDBCTablewareDAO implements ITablewareDAO {
-    private final String url;
-    private final String user;
-    private final String password;
+    private final ConnectionPool connectionPool;
 
-    public JDBCTablewareDAO(String url, String user, String password) {
-        this.url = url;
-        this.user = user;
-        this.password = password;
+    public JDBCTablewareDAO(ConnectionPool connectionPool) {
+        this.connectionPool = connectionPool;
     }
 
     @Override
     public Tableware createItem(Tableware tableware) throws DaoException {
         String sql = "INSERT INTO tableware(name, width, color, price, type, category, radius, style) VALUES(?, ?, ?, ?, ?, ?, ?, ?) RETURNING id";
 
-        try (Connection conn = DriverManager.getConnection(url, user, password);
+        try (Connection conn = connectionPool.takeConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, tableware.getName());
@@ -60,7 +58,7 @@ public class JDBCTablewareDAO implements ITablewareDAO {
             }
 
             return tableware;
-        } catch (SQLException e) {
+        } catch (SQLException | ConnectionPoolException e) {
             throw new DaoException("Error creating tableware", e);
         }
     }
@@ -68,7 +66,7 @@ public class JDBCTablewareDAO implements ITablewareDAO {
     @Override
     public Tableware findByID(int id) throws DaoException {
         String sql = "SELECT * FROM tableware WHERE id = ?";
-        try (Connection conn = DriverManager.getConnection(url, user, password);
+        try (Connection conn = connectionPool.takeConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, id);
@@ -79,7 +77,7 @@ public class JDBCTablewareDAO implements ITablewareDAO {
                     return null;
                 }
             }
-        } catch (SQLException e) {
+        } catch (SQLException | ConnectionPoolException e) {
             throw new DaoException("Error finding tableware with id " + id, e);
         }
     }
@@ -89,7 +87,7 @@ public class JDBCTablewareDAO implements ITablewareDAO {
         String sql = "SELECT * FROM tableware";
         List<Tableware> list = new ArrayList<>();
 
-        try (Connection conn = DriverManager.getConnection(url, user, password);
+        try (Connection conn = connectionPool.takeConnection();
              Statement st = conn.createStatement();
              ResultSet rs = st.executeQuery(sql)) {
 
@@ -98,7 +96,7 @@ public class JDBCTablewareDAO implements ITablewareDAO {
                 list.add(item);
             }
             return list;
-        } catch (SQLException e) {
+        } catch (SQLException | ConnectionPoolException e) {
             throw new DaoException("Error finding all tableware", e);
         }
     }
@@ -111,7 +109,7 @@ public class JDBCTablewareDAO implements ITablewareDAO {
 
         String sql = "UPDATE tableware SET " + column + " = ? WHERE id = ?";
 
-        try (Connection conn = DriverManager.getConnection(url, user, password);
+        try (Connection conn = connectionPool.takeConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             if (isStringColumn(column)) {
@@ -133,7 +131,7 @@ public class JDBCTablewareDAO implements ITablewareDAO {
             } else {
                 return null;
             }
-        } catch (SQLException e) {
+        } catch (SQLException | ConnectionPoolException e) {
             throw new DaoException("Error updating tableware with id " + id, e);
         }
     }
@@ -141,12 +139,12 @@ public class JDBCTablewareDAO implements ITablewareDAO {
     @Override
     public boolean delete(int id) throws DaoException {
         String sql = "DELETE FROM tableware WHERE id = ?";
-        try (Connection conn = DriverManager.getConnection(url, user, password);
+        try (Connection conn = connectionPool.takeConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, id);
             return ps.executeUpdate() > 0;
-        } catch (SQLException e) {
+        } catch (SQLException | ConnectionPoolException e) {
             throw new DaoException("Error deleting tableware with id " + id, e);
         }
     }
