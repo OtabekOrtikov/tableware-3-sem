@@ -1,11 +1,13 @@
-package org.otabek;
+    public class Main {
+        public static void main(String[] args) {
+            AppConfig config = new AppConfig();
+            config.getMainController().run();
+            CommandFactory commandFactory = new CommandFactory();
+            AdminController adminController = new AdminController(commandFactory);
+            ItemController itemController = new ItemController(commandFactory);
+            MainController mainController = new MainController(adminController, itemController, commandFactory);
+            MainView mainView = new MainView(mainController);
 
-import org.otabek.entity.item.Cup;
-import org.otabek.exceptions.DaoException;
-
-public class Main {
-    public static void main(String[] args) throws DaoException {
-        AppConfig config = new AppConfig();
-        config.getMainController().run();
+            mainView.start();
+        }
     }
-}
