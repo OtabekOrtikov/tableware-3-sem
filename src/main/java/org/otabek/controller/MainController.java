@@ -1,3 +1,5 @@
+package org.otabek.controller;
+
 public class MainController {
     private AdminController adminController;
     private ItemController itemController;

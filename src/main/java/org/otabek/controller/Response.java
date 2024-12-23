@@ -1,3 +1,5 @@
+package org.otabek.controller;
+
 public class Response {
     private String message;
 

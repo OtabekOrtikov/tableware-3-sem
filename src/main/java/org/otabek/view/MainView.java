@@ -1,3 +1,11 @@
+package org.otabek.view;
+
+import org.otabek.controller.MainController;
+import org.otabek.controller.Request;
+import org.otabek.controller.Response;
+
+import java.util.Scanner;
+
 public class MainView {
     private Scanner scanner;
     private MainController mainController;

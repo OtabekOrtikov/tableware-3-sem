@@ -1,4 +1,12 @@
-    public class ListUsersCommand implements Command {
+package org.otabek.controller.commands;
+
+import org.otabek.controller.Request;
+import org.otabek.controller.Response;
+import org.otabek.exceptions.DaoException;
+import org.otabek.service.UserService;
+import org.otabek.view.MainView;
+
+public class ListUsersCommand implements Command {
         private UserService userService;
         private MainView mainView;
 

@@ -1,3 +1,11 @@
+package org.otabek.controller.commands;
+
+import org.otabek.controller.Request;
+import org.otabek.controller.Response;
+import org.otabek.exceptions.DaoException;
+import org.otabek.service.UserService;
+import org.otabek.view.MainView;
+
 public class DeleteUserCommand implements Command {
     private UserService userService;
     private MainView mainView;
@@ -13,7 +21,7 @@ public class DeleteUserCommand implements Command {
     }
 
     @Override
-    public Response execute(Request request) {
+    public Response execute(Request request) throws DaoException {
         int userId = mainView.requestUserIdForDeletion();
         boolean deleted = userService.deleteUser(userId);
         if (deleted) {

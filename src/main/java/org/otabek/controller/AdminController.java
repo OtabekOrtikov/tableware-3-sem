@@ -1,3 +1,8 @@
+package org.otabek.controller;
+
+import org.otabek.controller.commands.Command;
+import org.otabek.controller.commands.CommandFactory;
+
 public class AdminController {
     private CommandFactory commandFactory;
 

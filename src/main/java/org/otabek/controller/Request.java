@@ -1,3 +1,5 @@
+package org.otabek.controller;
+
 public class Request {
     private String command;
     private String[] params;
