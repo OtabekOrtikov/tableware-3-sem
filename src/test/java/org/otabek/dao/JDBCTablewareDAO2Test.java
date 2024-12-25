@@ -1,114 +1,178 @@
 package org.otabek.dao;
 
 import org.junit.jupiter.api.*;
+import org.mockito.*;
 import org.otabek.dao.jdbc.JDBCTablewareDAO;
 import org.otabek.entity.Tableware;
 import org.otabek.entity.item.Cup;
 import org.otabek.entity.item.Plate;
 import org.otabek.entity.item.Teapot;
 import org.otabek.exceptions.DaoException;
-import org.otabek.pool.ConnectionPool;
+import transaction.TransactionManager;
 
-import java.sql.Connection;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.List;
 
+import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class JDBCTablewareDAO2Test {
+class JDBCTablewareDAO2Test {
 
-    private ConnectionPool connectionPool;
-    private JDBCTablewareDAO dao;
+    private JDBCTablewareDAO tablewareDAO;
+    private TransactionManager transactionManager;
+    private Connection mockConnection;
+    private PreparedStatement mockPreparedStatement;
+    private ResultSet mockResultSet;
 
     @BeforeAll
-    void setUpDatabase() throws Exception {
-        connectionPool = ConnectionPool.create("jdbc:postgresql://localhost:5432/tableware_warehousetest",
-                "postgres", "1234", 10);
-        dao = new JDBCTablewareDAO(connectionPool);
+    void setup() {
+        // Mock the TransactionManager and database connections
+        transactionManager = mock(TransactionManager.class);
+        mockConnection = mock(Connection.class);
+        mockPreparedStatement = mock(PreparedStatement.class);
+        mockResultSet = mock(ResultSet.class);
 
-        try (Connection connection = connectionPool.takeConnection();
-             Statement stmt = connection.createStatement()) {
-            stmt.execute("CREATE TABLE IF NOT EXISTS tableware (" +
-                    "id SERIAL PRIMARY KEY, " +
-                    "name VARCHAR(255), width FLOAT, color VARCHAR(255), " +
-                    "price FLOAT, type VARCHAR(50), category VARCHAR(255), " +
-                    "radius FLOAT, style VARCHAR(255)" +
-                    ")");
-            stmt.execute("TRUNCATE TABLE tableware RESTART IDENTITY");
+        // Mock the transaction manager to return mocked connection
+        try {
+            when(transactionManager.getConnection()).thenReturn(mockConnection);
+        } catch (DaoException e) {
+            fail("Failed to mock connection");
         }
+
+        // Create the DAO with mocked TransactionManager
+        tablewareDAO = new JDBCTablewareDAO(transactionManager);
+    }
+
+    @BeforeEach
+    void setupMocks() throws SQLException {
+        // Reset mocks before each test
+        reset(mockConnection, mockPreparedStatement, mockResultSet);
+
+        // Mock behavior for the PreparedStatement and ResultSet
+        when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
+        when(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet);
     }
 
     @Test
-    void testCreateAndFindCup() throws DaoException {
-        Tableware cup = new Cup(1, "Small Cup", 11.0f, "Blue", 15.99f, "Coffee");
-        Tableware createdCup = dao.createItem(cup);
+    void testCreateItem() throws DaoException, SQLException {
+        // Create a mock Cup item
+        Tableware cup = new Cup(null, "Coffee Cup", 5.0f, "White", 10f, "Mug");
 
-        assertNotNull(createdCup.getId(), "Created cup ID should not be null");
-        assertEquals("Small Cup", createdCup.getName(), "Cup name mismatch");
+        // Mock the ResultSet to simulate a returned ID after insertion
+        when(mockResultSet.next()).thenReturn(true);
+        when(mockResultSet.getInt(1)).thenReturn(1);
 
-        Tableware foundItem = dao.findByID(createdCup.getId());
-        assertNotNull(foundItem, "Found item should not be null");
-        assertEquals("Small Cup", foundItem.getName(), "Found item name mismatch");
-        assertTrue(foundItem instanceof Cup, "Found item should be a Cup");
+        // Call the method to test
+        Tableware createdItem = tablewareDAO.createItem(cup);
+
+        // Verify interactions with the mocks
+        verify(mockPreparedStatement).setString(1, "Coffee Cup");
+        verify(mockPreparedStatement).setFloat(2, 5.0f);
+        verify(mockPreparedStatement).setString(3, "White");
+        verify(mockPreparedStatement).setFloat(4, 10f);
+
+        // Verify the returned item
+        assertNotNull(createdItem);
+        assertEquals(1, createdItem.getId());
+        assertEquals("Coffee Cup", createdItem.getName());
     }
 
     @Test
-    void testCreateAndFindPlate() throws DaoException {
-        Tableware plate = new Plate(1, "Dinner Plate", 15.0f, "White", 25.99f, 30.0f);
-        Tableware createdPlate = dao.createItem(plate);
+    void testFindByID() throws DaoException, SQLException {
+        // Create a mock Plate item
+        Tableware plate = new Plate(1, "Dinner Plate", 10.0f, "Blue", 15f, 20.0f);
 
-        assertNotNull(createdPlate.getId(), "Created plate ID should not be null");
-        assertEquals("Dinner Plate", createdPlate.getName(), "Plate name mismatch");
+        // Mock the ResultSet to return the mock Plate data
+        when(mockResultSet.next()).thenReturn(true);
+        when(mockResultSet.getInt("id")).thenReturn(1);
+        when(mockResultSet.getString("name")).thenReturn("Dinner Plate");
+        when(mockResultSet.getFloat("radius")).thenReturn(20.0f);
 
-        Tableware foundItem = dao.findByID(createdPlate.getId());
-        assertNotNull(foundItem, "Found item should not be null");
-        assertEquals("Dinner Plate", foundItem.getName(), "Found item name mismatch");
-        assertTrue(foundItem instanceof Plate, "Found item should be a Plate");
+        // Call the method to test
+        Tableware foundItem = tablewareDAO.findByID(1);
+
+        // Verify the returned item
+        assertNotNull(foundItem);
+        assertEquals("Dinner Plate", foundItem.getName());
+        assertEquals(20.0f, ((Plate) foundItem).getRadius());
     }
 
     @Test
-    void testCreateAndFindTeapot() throws DaoException {
-        Tableware teapot = new Teapot(1, "Ceramic Teapot", 20.0f, "Red", 45.50f, "Vintage");
-        Tableware createdTeapot = dao.createItem(teapot);
+    void testFindAll() throws DaoException, SQLException {
+        // Mock two items: Cup and Plate
+        Tableware cup = new Cup(1, "Cup1", 5f, "Red", 10f, "Mug");
+        Tableware plate = new Plate(2, "Plate1", 10f, "Blue", 15f, 20f);
 
-        assertNotNull(createdTeapot.getId(), "Created teapot ID should not be null");
-        assertEquals("Ceramic Teapot", createdTeapot.getName(), "Teapot name mismatch");
+        // Mock the ResultSet to return the two items
+        when(mockResultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false);
+        when(mockResultSet.getInt("id")).thenReturn(1).thenReturn(2);
+        when(mockResultSet.getString("name")).thenReturn("Cup1").thenReturn("Plate1");
 
-        Tableware foundItem = dao.findByID(createdTeapot.getId());
-        assertNotNull(foundItem, "Found item should not be null");
-        assertEquals("Ceramic Teapot", foundItem.getName(), "Found item name mismatch");
-        assertTrue(foundItem instanceof Teapot, "Found item should be a Teapot");
+        // Call the method to test
+        List<Tableware> items = tablewareDAO.findAll();
+
+        // Verify the returned list
+        assertNotNull(items);
+        assertEquals(2, items.size());
+        assertEquals("Cup1", items.get(0).getName());
+        assertEquals("Plate1", items.get(1).getName());
     }
 
     @Test
-    void testFindAllItems() throws DaoException {
-        dao.createItem(new Cup(null, "Cup A", 10.0f, "Green", 12.50f, "Tea"));
-        dao.createItem(new Plate(null, "Plate A", 18.0f, "Blue", 22.99f, 25.0f));
-        dao.createItem(new Teapot(null, "Teapot A", 25.0f, "Black", 39.99f, "Modern"));
+    void testUpdateItem() throws DaoException, SQLException {
+        // Create a mock Cup item
+        Tableware cup = new Cup(1, "Old Cup", 5.0f, "White", 10f, "Mug");
 
-        List<Tableware> allItems = dao.findAll();
-        assertEquals(3, allItems.size(), "Should find exactly 3 items");
+        // Mock the PreparedStatement behavior
+        when(mockPreparedStatement.executeUpdate()).thenReturn(1);
+        when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
+
+        // Call the method to test
+        Tableware updatedItem = tablewareDAO.updateItem("name", "Updated Cup", 1);
+
+        // Verify that the update query was executed
+        verify(mockPreparedStatement).setString(1, "Updated Cup");
+        verify(mockPreparedStatement).setInt(2, 1);
+
+        // Check that the updated item has the new name
+        assertNotNull(updatedItem);
+        assertEquals("Updated Cup", updatedItem.getName());
     }
 
     @Test
-    void testDeleteItem() throws DaoException {
-        Tableware cup = new Cup(null, "To Be Deleted", 11.0f, "Blue", 15.99f, "Coffee");
-        Tableware createdCup = dao.createItem(cup);
+    void testDeleteItem() throws DaoException, SQLException {
+        // Create a mock Teapot item
+        Tableware teapot = new Teapot(1, "Teapot", 8.0f, "Green", 20f, "Vintage");
 
-        boolean isDeleted = dao.delete(createdCup.getId());
-        assertTrue(isDeleted, "Item should be deleted");
+        // Mock the PreparedStatement behavior
+        when(mockPreparedStatement.executeUpdate()).thenReturn(1);
 
-        Tableware found = dao.findByID(createdCup.getId());
-        assertNull(found, "Deleted item should not be found");
+        // Call the method to test
+        boolean deleted = tablewareDAO.delete(1);
+
+        // Verify that the delete query was executed
+        verify(mockPreparedStatement).setInt(1, 1);
+
+        // Assert the item was deleted
+        assertTrue(deleted);
+    }
+
+    @Test
+    void testDeleteNonExistentItem() throws DaoException, SQLException {
+        // Mock the PreparedStatement behavior to return 0 (no rows deleted)
+        when(mockPreparedStatement.executeUpdate()).thenReturn(0);
+
+        // Call the method to test
+        boolean deleted = tablewareDAO.delete(999); // Non-existent ID
+
+        // Assert the item was not deleted
+        assertFalse(deleted);
     }
 
     @AfterAll
-    void tearDown() throws Exception {
-        try (Connection connection = connectionPool.takeConnection();
-             Statement stmt = connection.createStatement()) {
-            stmt.execute("DROP TABLE IF EXISTS tableware");
-        }
-        connectionPool.close();
+    void tearDown() throws SQLException {
+        // Close mocks (if necessary)
+        mockConnection.close();
     }
 }

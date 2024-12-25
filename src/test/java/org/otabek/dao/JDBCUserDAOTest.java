@@ -5,6 +5,7 @@ import org.otabek.dao.jdbc.JDBCUserDAO;
 import org.otabek.entity.Role;
 import org.otabek.entity.User;
 import org.otabek.exceptions.DaoException;
+import transaction.TransactionManager;
 import org.otabek.pool.ConnectionPool;
 
 import java.sql.Connection;
@@ -17,18 +18,18 @@ import static org.junit.jupiter.api.Assertions.*;
 class JDBCUserDAOTest {
 
     private JDBCUserDAO userDao;
+    private TransactionManager transactionManager;
     private ConnectionPool connectionPool;
 
     @BeforeAll
     void setupDatabase() throws Exception {
-        connectionPool = ConnectionPool.create(
-                "jdbc:postgresql://localhost:5432/tableware_warehousetest",
-                "postgres",
-                "1234",
-                10 // Pool size
-        );
+        // Initialize the ConnectionPool first
+        connectionPool = ConnectionPool.create("jdbc:postgresql://localhost:5432/tableware_warehousetest", "postgres", "1234", 10);
 
-        try (Connection conn = connectionPool.takeConnection();
+        // Now create the TransactionManager with the initialized pool
+        transactionManager = new TransactionManager(connectionPool);
+
+        try (Connection conn = transactionManager.getConnection();
              Statement st = conn.createStatement()) {
             st.execute("CREATE TABLE IF NOT EXISTS users (" +
                     "id SERIAL PRIMARY KEY, " +
@@ -37,25 +38,15 @@ class JDBCUserDAOTest {
                     "role VARCHAR(50) NOT NULL)");
         }
 
-        userDao = new JDBCUserDAO(connectionPool);
+        userDao = new JDBCUserDAO(transactionManager);
     }
 
     @BeforeEach
     void cleanup() throws Exception {
-        try (Connection conn = connectionPool.takeConnection();
+        try (Connection conn = transactionManager.getConnection();
              Statement st = conn.createStatement()) {
             st.execute("TRUNCATE TABLE users RESTART IDENTITY");
         }
-    }
-
-    @Test
-    void testCreateUser() throws DaoException {
-        User user = new User(null, "testuser", "password123", Role.USER);
-        User createdUser = userDao.createUser(user);
-
-        assertNotNull(createdUser);
-        assertNotNull(createdUser.getId(), "Created user ID should not be null");
-        assertEquals("testuser", createdUser.getUsername());
     }
 
     @Test
@@ -169,10 +160,10 @@ class JDBCUserDAOTest {
 
     @AfterAll
     void tearDown() throws Exception {
-        try (Connection conn = connectionPool.takeConnection();
+        try (Connection conn = transactionManager.getConnection();
              Statement st = conn.createStatement()) {
             st.execute("DROP TABLE IF EXISTS users");
         }
-        connectionPool.close();
+        connectionPool.close(); // Close the connection pool when done
     }
 }

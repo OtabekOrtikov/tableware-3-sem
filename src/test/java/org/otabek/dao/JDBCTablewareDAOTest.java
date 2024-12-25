@@ -8,6 +8,7 @@ import org.otabek.entity.item.Plate;
 import org.otabek.entity.item.Teapot;
 import org.otabek.exceptions.DaoException;
 import org.otabek.pool.ConnectionPool;
+import transaction.TransactionManager;
 
 import java.sql.Connection;
 import java.sql.Statement;
@@ -19,20 +20,17 @@ import static org.junit.jupiter.api.Assertions.*;
 class JDBCTablewareDAOTest {
 
     private JDBCTablewareDAO tablewareDAO;
+    private TransactionManager transactionManager;
     private ConnectionPool connectionPool;
 
     @BeforeAll
     void setupDatabase() throws Exception {
-        // Initialize ConnectionPool
-        connectionPool = ConnectionPool.create(
-                "jdbc:postgresql://localhost:5432/tableware_warehousetest",
-                "postgres",
-                "1234",
-                10 // Pool size
-        );
+        // Initialize ConnectionPool and TransactionManager
+        connectionPool = ConnectionPool.create("jdbc:postgresql://localhost:5432/tableware_warehousetest", "postgres", "1234", 10);
+        transactionManager = new TransactionManager(connectionPool);
 
         // Create schema
-        try (Connection conn = connectionPool.takeConnection();
+        try (Connection conn = transactionManager.getConnection();
              Statement st = conn.createStatement()) {
             st.execute("""
                     CREATE TABLE IF NOT EXISTS tableware (
@@ -49,13 +47,13 @@ class JDBCTablewareDAOTest {
                     """);
         }
 
-        tablewareDAO = new JDBCTablewareDAO(connectionPool);
+        tablewareDAO = new JDBCTablewareDAO(transactionManager);
     }
 
     @BeforeEach
     void cleanup() throws Exception {
-        // Truncate table to reset state
-        try (Connection conn = connectionPool.takeConnection();
+        // Truncate table to reset state before each test
+        try (Connection conn = transactionManager.getConnection();
              Statement st = conn.createStatement()) {
             st.execute("TRUNCATE TABLE tableware RESTART IDENTITY");
         }
@@ -102,6 +100,7 @@ class JDBCTablewareDAOTest {
         Tableware cup = new Cup(null, "Old Cup", 5.0f, "White", 10f, "Mug");
         Tableware createdItem = tablewareDAO.createItem(cup);
 
+        // Update the item name
         Tableware updatedItem = tablewareDAO.updateItem("name", "Updated Cup", createdItem.getId());
 
         assertNotNull(updatedItem, "Updated item should not be null");
@@ -131,7 +130,7 @@ class JDBCTablewareDAOTest {
     @AfterAll
     void tearDown() throws Exception {
         // Drop the table and close the connection pool
-        try (Connection conn = connectionPool.takeConnection();
+        try (Connection conn = transactionManager.getConnection();
              Statement st = conn.createStatement()) {
             st.execute("DROP TABLE IF EXISTS tableware");
         }

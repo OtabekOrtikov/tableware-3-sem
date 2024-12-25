@@ -4,122 +4,136 @@ import org.junit.jupiter.api.*;
 import org.otabek.dao.jdbc.JDBCTablewareDAO;
 import org.otabek.entity.Tableware;
 import org.otabek.entity.item.Cup;
+import org.otabek.entity.item.Plate;
+import org.otabek.entity.item.Teapot;
 import org.otabek.exceptions.DaoException;
 import org.otabek.pool.ConnectionPool;
+import transaction.TransactionManager;
 
-import java.sql.Connection;
-import java.sql.Statement;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class TablewareService2Test {
+class TablewareService2Test {
 
+    private TablewareService tablewareService;
+    private JDBCTablewareDAO tablewareDAO;
+    private TransactionManager transactionManager;
     private ConnectionPool connectionPool;
-    private JDBCTablewareDAO dao;
-    private TablewareService service;
 
     @BeforeAll
-    void setUpDatabase() throws Exception {
-        // Initialize ConnectionPool
-        connectionPool = ConnectionPool.create(
-                "jdbc:postgresql://localhost:5432/tableware_warehousetest",
-                "postgres",
-                "1234",
-                10 // Pool size
-        );
+    void setup() throws Exception {
+        // Initialize the ConnectionPool to point to tableware_warehousetest DB
+        connectionPool = ConnectionPool.create("jdbc:postgresql://localhost:5432/tableware_warehousetest", "postgres", "1234", 10);
 
-        // Initialize DAO and Service
-        dao = new JDBCTablewareDAO(connectionPool);
-        service = new TablewareService(dao);
+        // Initialize the TransactionManager with the ConnectionPool
+        transactionManager = new TransactionManager(connectionPool);
 
-        // Set up the table
-        try (Connection connection = connectionPool.takeConnection();
-             Statement stmt = connection.createStatement()) {
-            stmt.execute("CREATE TABLE IF NOT EXISTS tableware (" +
-                    "id SERIAL PRIMARY KEY, " +
-                    "name VARCHAR(255), " +
-                    "width FLOAT, " +
-                    "color VARCHAR(255), " +
-                    "price FLOAT, " +
-                    "type VARCHAR(50), " +
-                    "category VARCHAR(255), " +
-                    "radius FLOAT, " +
-                    "style VARCHAR(255)" +
-                    ")");
-        }
+        // Initialize the DAO with the TransactionManager
+        tablewareDAO = new JDBCTablewareDAO(transactionManager);
+
+        // Initialize the TablewareService with the DAO
+        tablewareService = new TablewareService(tablewareDAO);
     }
 
     @BeforeEach
-    void cleanTable() throws Exception {
-        // Clear the table before each test
-        try (Connection connection = connectionPool.takeConnection();
-             Statement stmt = connection.createStatement()) {
-            stmt.execute("TRUNCATE TABLE tableware RESTART IDENTITY");
+    void cleanup() throws Exception {
+        // Truncate table to reset state before each test
+        try (var conn = transactionManager.getConnection();
+             var st = conn.createStatement()) {
+            st.execute("TRUNCATE TABLE tableware RESTART IDENTITY");
         }
     }
 
     @Test
-    void testCreateAndRetrieveTableware() throws DaoException {
-        Tableware cup = new Cup(null, "Small Cup", 10.0f, "Red", 5.99f, "Tea");
-        Tableware created = service.createTableware(cup);
+    void testCreateTableware() throws DaoException {
+        Tableware cup = new Cup(null, "Coffee Cup", 5.0f, "White", 10f, "Mug");
 
-        assertNotNull(created.getId(), "Created tableware ID should not be null");
-        assertEquals("Small Cup", created.getName(), "Tableware name mismatch");
+        // Call the service method
+        Tableware createdTableware = tablewareService.createTableware(cup);
 
-        Tableware retrieved = service.getByID(created.getId());
-        assertNotNull(retrieved, "Retrieved tableware should not be null");
-        assertEquals("Small Cup", retrieved.getName(), "Retrieved tableware name mismatch");
+        // Assert that the tableware is created with the correct data
+        assertNotNull(createdTableware.getId(), "Created tableware should have an ID");
+        assertEquals("Coffee Cup", createdTableware.getName(), "Tableware name mismatch");
     }
 
     @Test
-    void testGetAllTableware() throws DaoException {
-        Tableware cup1 = new Cup(null, "Cup A", 10.0f, "Red", 5.99f, "Tea");
-        Tableware cup2 = new Cup(null, "Cup B", 12.0f, "Blue", 6.99f, "Coffee");
+    void testGetByID() throws DaoException {
+        Tableware plate = new Plate(null, "Dinner Plate", 10.0f, "Blue", 15f, 20f);
 
-        service.createTableware(cup1);
-        service.createTableware(cup2);
+        // Create a plate using the service
+        Tableware createdPlate = tablewareService.createTableware(plate);
 
-        List<Tableware> allItems = service.getAll();
-        assertEquals(2, allItems.size(), "There should be 2 items in the tableware list");
+        // Retrieve the tableware by ID
+        Tableware foundPlate = tablewareService.getByID(createdPlate.getId());
+
+        // Assert that the tableware is found and has the correct data
+        assertNotNull(foundPlate, "Tableware should be found by ID");
+        assertEquals("Dinner Plate", foundPlate.getName(), "Tableware name mismatch");
+        assertEquals(20f, ((Plate) foundPlate).getRadius(), "Radius mismatch");
+    }
+
+    @Test
+    void testGetAll() throws DaoException {
+        tablewareService.createTableware(new Cup(null, "Cup1", 5f, "Red", 10f, "Mug"));
+        tablewareService.createTableware(new Plate(null, "Plate1", 10f, "Blue", 15f, 20f));
+
+        // Retrieve all tableware
+        List<Tableware> tablewareList = tablewareService.getAll();
+
+        // Assert that all items are returned correctly
+        assertNotNull(tablewareList, "Tableware list should not be null");
+        assertEquals(2, tablewareList.size(), "Tableware list size mismatch");
+        assertEquals("Cup1", tablewareList.get(0).getName(), "First tableware name mismatch");
+        assertEquals("Plate1", tablewareList.get(1).getName(), "Second tableware name mismatch");
     }
 
     @Test
     void testUpdateTableware() throws DaoException {
-        // Step 1: Create a tableware item
-        Tableware cup = new Cup(null, "Old Cup", 10.0f, "Red", 5.99f, "Tea");
-        Tableware created = service.createTableware(cup);
+        Tableware cup = new Cup(null, "Old Cup", 5.0f, "White", 10f, "Mug");
 
-        // Step 2: Update the tableware's name
-        String newName = "Updated Cup";
-        Tableware updated = service.updateTableware("name", newName, created.getId());
+        // Create a new cup
+        Tableware createdCup = tablewareService.createTableware(cup);
 
-        // Step 3: Assert the results
-        assertNotNull(updated, "Updated tableware should not be null");
-        assertEquals(newName, updated.getName(), "Updated tableware name mismatch");
+        // Update the cup name using the service
+        Tableware updatedCup = tablewareService.updateTableware("name", "Updated Cup", createdCup.getId());
+
+        // Assert that the cup was updated
+        assertNotNull(updatedCup, "Updated tableware should not be null");
+        assertEquals("Updated Cup", updatedCup.getName(), "Tableware name mismatch after update");
     }
-
 
     @Test
     void testDeleteTableware() throws DaoException {
-        Tableware cup = new Cup(null, "Cup to Delete", 10.0f, "Red", 5.99f, "Tea");
-        Tableware created = service.createTableware(cup);
+        Tableware teapot = new Teapot(null, "Teapot", 8.0f, "Green", 20f, "Vintage");
 
-        boolean deleted = service.deleteTableware(created.getId());
-        assertTrue(deleted, "Tableware should be deleted");
+        // Create a new teapot
+        Tableware createdTeapot = tablewareService.createTableware(teapot);
 
-        Tableware retrieved = service.getByID(created.getId());
-        assertNull(retrieved, "Deleted tableware should not be found");
+        // Delete the teapot using the service
+        boolean isDeleted = tablewareService.deleteTableware(createdTeapot.getId());
+
+        // Assert that the teapot was deleted
+        assertTrue(isDeleted, "Tableware should be deleted");
+
+        // Attempt to find the deleted item
+        Tableware foundTeapot = tablewareService.getByID(createdTeapot.getId());
+        assertNull(foundTeapot, "Deleted tableware should not be found");
+    }
+
+    @Test
+    void testDeleteNonExistentTableware() throws DaoException {
+        // Attempt to delete a non-existent item
+        boolean isDeleted = tablewareService.deleteTableware(999); // Non-existent ID
+
+        // Assert that the deletion attempt returns false
+        assertFalse(isDeleted, "Deleting a non-existent tableware should return false");
     }
 
     @AfterAll
     void tearDown() throws Exception {
-        // Drop the table and close the connection pool
-        try (Connection connection = connectionPool.takeConnection();
-             Statement stmt = connection.createStatement()) {
-            stmt.execute("DROP TABLE IF EXISTS tableware");
-        }
+        // Close the connection pool
         connectionPool.close();
     }
 }
