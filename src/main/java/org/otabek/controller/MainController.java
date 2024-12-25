@@ -12,7 +12,7 @@ public class MainController {
     private final UserService userService;
     private final TablewareService tablewareService;
     private final MainView mainView;
-    private User loggedInUser;
+    protected User loggedInUser;
 
     public MainController(MainView mainView, TablewareService tablewareService, UserService userService) {
         this.mainView = mainView;
@@ -40,7 +40,7 @@ public class MainController {
         }
     }
 
-    private void adminMenu() throws DaoException {
+    void adminMenu() throws DaoException {
         while (true) {
             mainView.displayAdminMenu();
             String command = mainView.readCommand();
@@ -53,10 +53,17 @@ public class MainController {
         }
     }
 
-    private void userMenu() throws DaoException {
+    void userMenu() throws DaoException {
         while (true) {
             mainView.displayUserMenu();
             String command = mainView.readCommand();
+
+            // Add a null check here
+            if (command == null) {
+                mainView.displayInvalidCommandMessage();
+                continue;
+            }
+
             switch (command) {
                 case "/items", "1" -> manageItems();
                 case "/exit", "2" -> System.exit(0);
@@ -64,6 +71,7 @@ public class MainController {
             }
         }
     }
+
 
     private void manageUsers() throws DaoException {
         while (true) {
@@ -111,7 +119,7 @@ public class MainController {
         tablewareService.getAll().forEach(item -> mainView.displayItem(item.toString()));
     }
 
-    private void createItem() throws DaoException {
+    void createItem() throws DaoException {
         String itemType = mainView.requestItemType();
         Tableware newItem = mainView.requestItemDetails(itemType);
         tablewareService.createTableware(newItem);
@@ -147,7 +155,7 @@ public class MainController {
         }
     }
 
-    private void deleteItem() throws DaoException {
+    void deleteItem() throws DaoException {
         int id = mainView.requestItemIdForDeletion();
         if (tablewareService.deleteTableware(id)) {
             mainView.displaySuccessMessage("Item deleted successfully.");
